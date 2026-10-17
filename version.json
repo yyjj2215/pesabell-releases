@@ -1,0 +1,12 @@
+{
+  "versionCode": 7,
+  "versionName": "0.4.0",
+  "apk": "https://raw.githubusercontent.com/yyjj2215/pesabell-releases/main/apk/PesaBell-v0.4.0.apk",
+  "sha256": "99b31d7b5b6c1d4717f516b05b748ad1a42c3b1ebe05f459851dedfe4f1064a5",
+  "size": 156830,
+  "notes": {
+    "zh": "看门狗：被系统清掉后约 1 分钟自动恢复；补报：恢复后补播停掉期间的到账，首页提示漏了几笔；自动更新。",
+    "en": "Watchdog: PesaBell comes back about a minute after the phone stops it. Payments that arrived while it was stopped are announced late and counted on the home screen. Automatic updates.",
+    "sw": "Mlinzi: PesaBell hurudi takriban dakika moja baada ya simu kuisimamisha. Malipo yaliyoingia ikiwa imesimamishwa hutangazwa baadaye. Masasisho ya kiotomatiki."
+  }
+}
