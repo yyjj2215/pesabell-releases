@@ -1,12 +1,12 @@
 {
-  "versionCode": 8,
-  "versionName": "0.4.1",
-  "apk": "https://raw.githubusercontent.com/yyjj2215/pesabell-releases/main/apk/PesaBell-v0.4.1.apk",
-  "sha256": "67338d4273cb0dac29e68d214a77c2388a8088424c0ad53481ffb94a3e365bbe",
-  "size": 156831,
+  "versionCode": 10,
+  "versionName": "0.6.0",
+  "apk": "https://raw.githubusercontent.com/yyjj2215/pesabell-releases/main/apk/PesaBell-v0.6.0.apk",
+  "sha256": "c4e35351c30e350102f27827fd3c55db392baff8e3cdd086975649c91e6b994b",
+  "size": 3275566,
   "notes": {
-    "zh": "测试自动更新（功能和 0.4.0 相同）。",
-    "en": "Update test (same features as 0.4.0).",
-    "sw": "Jaribio la sasisho (sawa na 0.4.0)."
+    "zh": "全新界面。音箱没报出来的到账会标成“需要核对”。可选三种播报方式：音箱、手机、音箱和手机一起。可读取通知，和短信双重确认。交易记录按日期筛选，可导出 Excel。新增个人往来名单，可切换音箱语言。",
+    "en": "New design. Payments the speaker didn't announce are marked to check. Choose who announces: the speaker, the phone, or both. Notifications double-check M-Pesa SMS. Records by date, with Excel export. Personal list, and the speaker's language.",
+    "sw": "Muundo mpya. Malipo ambayo spika haikutangaza yanawekewa alama ya kukagua. Chagua anayetangaza: spika, simu, au zote mbili. Arifa zinathibitisha SMS za M-Pesa mara mbili. Rekodi kwa tarehe, na kutuma kwa Excel. Orodha binafsi, na lugha ya spika."
   }
 }
