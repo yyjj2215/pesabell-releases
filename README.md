@@ -16,3 +16,7 @@ Put these two lines in the server's startup script (cloud-init user-data) when c
 #!/bin/bash
 curl -fsSL https://raw.githubusercontent.com/yyjj2215/pesabell-releases/main/server/bootstrap.sh -o /root/bootstrap.sh && bash /root/bootstrap.sh
 ```
+
+**Chinese voice / 中文语音包:** `voice/make_zh_a.py` makes the Chinese announcements the PesaBell server plays
+(every amount said as one sentence, voice MeloTTS, checked by a speech recognizer); `.github/workflows/voice.yml`
+runs it on GitHub's machines and publishes the release `voice-zh-a-1`. 服务器播报的中文语音包，每个金额整句合成。
