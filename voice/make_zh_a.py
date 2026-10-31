@@ -1,6 +1,10 @@
 """Make PesaBell's Chinese voice pack "zh-a": every announcement part as one whole sentence, as MP3.
 
-  python make_zh_a.py <shard> <shards> <out_dir>      (models in ./models, see .github/workflows/voice.yml)
+  VERSION=<k> python make_zh_a.py <shard> <shards> <out_dir>    (models in ./models, see .github/workflows/voice.yml)
+
+Version 2 (used): s/1-99,999, whole sentences only; it makes 10,000-99,999 and the sentences version 1 never got
+heard right (RETRY, from version 1's report.json), the workflow takes the rest of version 1. Version 1's parts for
+"一万" + "两千五百先令" (w/, y/, z/ below) are not used by the server: a part that starts with a number slurs it.
 
 Voice: MeloTTS Chinese (MIT, the sherpa-onnx export vits-melo-tts-zh_en), chosen by ear by Jesse on PB0002
 (2026-10-31) over word clips joined end to end. Each part is said in one go, so the tones and the rhythm are those
@@ -26,7 +30,7 @@ from scipy.signal import resample_poly
 HERE = os.path.dirname(os.path.abspath(__file__))
 MODELS = os.path.join(HERE, "models")
 DIGITS = "零一二三四五六七八九"
-TAKES = 6
+TAKES = {1: 6, 2: 10}
 
 
 def section(n, lead=True, alone=True):
@@ -51,8 +55,20 @@ def section(n, lead=True, alone=True):
     return out
 
 
-def items():
+def amount(n):
+    """1-99,999 in Chinese characters: 一万两千五百, 一万零五, 两万."""
+    if n < 10000:
+        return section(n)
+    x, y = divmod(n, 10000)
+    rest = "" if not y else section(y, lead=False) if y >= 1000 else "零" + section(y, lead=False, alone=False)
+    return section(x) + "万" + rest
+
+
+def items(version=1, retry=()):
     """(part, text to say, words the recognizer must hear)."""
+    if version >= 2:
+        todo = list(retry) + list(range(10000, 100000))
+        return [(f"s/{n}", f"已到账{amount(n)}先令。", f"已到账{amount(n)}") for n in todo]
     out = []
     for n in range(1, 10000):
         out.append((f"s/{n}", f"已到账{section(n)}先令。", f"已到账{section(n)}"))
@@ -121,15 +137,17 @@ def chime(out):
 
 def main(shard, shards, out):
     shard, shards = int(shard), int(shards)
+    version = int(os.environ.get("VERSION", "1"))
+    retry = [int(n) for n in os.environ.get("RETRY", "").split()]
     tts, asr = engines(int(os.environ.get("THREADS", "4")))
-    todo = items()[shard::shards]
+    todo = items(version, retry)[shard::shards]
     report = []
     started = time.time()
     for k, (part, text, want) in enumerate(todo):
         path = os.path.join(out, part + ".mp3")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         best = None
-        for take in range(1, TAKES + 1):
+        for take in range(1, TAKES[version] + 1):
             a = tts.generate(text, sid=0, speed=1.0)
             x = to16k(a.samples, a.sample_rate)
             s = asr.create_stream()
@@ -147,7 +165,7 @@ def main(shard, shards, out):
         report.append({"part": part, "takes": take, "ok": ok, "heard": heard})
         if k % 100 == 0:
             print(f"shard {shard}: {k}/{len(todo)} in {time.time() - started:.0f} s", flush=True)
-    if shard == 0:
+    if shard == 0 and version == 1:
         chime(out)
     with open(os.path.join(out, f"report-{shard}.json"), "w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False)
@@ -157,7 +175,7 @@ def main(shard, shards, out):
 
 if __name__ == "__main__":
     if sys.argv[1:2] == ["--list"]:
-        for part, text, want in items():
+        for part, text, want in items(int(os.environ.get("VERSION", "1"))):
             print(part, text, want)
     else:
         main(*sys.argv[1:4])
