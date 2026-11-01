@@ -1,6 +1,7 @@
 {
-  "base": "zh-a-2",
-  "version": "zh-a-3",
-  "remake": [60120, 60126, 60129, 60151, 60164, 60168, 60170, 60250, 90297],
-  "why": "zh-a-2's 零 in these came out like 里, 年 or 联 (report.json); the rest of its 78 misheard sentences say the amount right"
+  "base": "zh-a-3",
+  "version": "zh-a-4",
+  "remake": [],
+  "late": true,
+  "why": "补报: a payment the speaker missed, said again later (chime, late/<hhmm> 现在补报一笔，下午四点五十一分，, s/<n>)"
 }

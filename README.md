@@ -20,3 +20,5 @@ curl -fsSL https://raw.githubusercontent.com/yyjj2215/pesabell-releases/main/ser
 **Chinese voice / 中文语音包:** `voice/make_zh_a.py` makes the Chinese announcements the PesaBell server plays
 (every amount said as one sentence, voice MeloTTS, checked by a speech recognizer); `.github/workflows/voice.yml`
 runs it on GitHub's machines and publishes the release `voice-zh-a-1`. 服务器播报的中文语音包，每个金额整句合成。
+`voice/fix.json` and `.github/workflows/voice-fix.yml` make a new version from an earlier one: some sentences made
+again (zh-a-3), the 补报 parts `late/<hhmm>` "现在补报一笔，下午四点五十一分，" for a payment the speaker missed (zh-a-4).

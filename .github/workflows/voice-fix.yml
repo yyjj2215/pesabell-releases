@@ -1,5 +1,6 @@
-# Makes a few sentences of the Chinese voice pack again (voice/fix.json: the base release, the new version, the
-# amounts) and publishes the base with them replaced as a new release for the PesaBell server (deploy/voice.json).
+# Makes a few sentences of the Chinese voice pack again and/or adds the 补报 parts (voice/fix.json: the base release,
+# the new version, the amounts to remake, "late": true for late/<hhmm>), and publishes the base with them as a new
+# release for the PesaBell server (deploy/voice.json).
 name: Chinese voice pack fix
 on:
   push:
@@ -13,7 +14,7 @@ concurrency:
 jobs:
   fix:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,25 +34,58 @@ jobs:
       - name: Settings
         id: fix
         run: |
-          python3 -c "import json; f = json.load(open('voice/fix.json')); print('base=' + f['base']); print('version=' + f['version']); print('remake=' + ' '.join(map(str, f['remake'])))" >> "$GITHUB_OUTPUT"
+          python3 - >> "$GITHUB_OUTPUT" <<'EOF'
+          import json
+          f = json.load(open('voice/fix.json'))
+          print('base=' + f['base'])
+          print('version=' + f['version'])
+          print('remake=' + ' '.join(map(str, f.get('remake', []))))
+          print('late=' + ('yes' if f.get('late') else ''))
+          EOF
       - name: Make the sentences again
+        if: steps.fix.outputs.remake != ''
         run: VERSION=3 RETRY="${{ steps.fix.outputs.remake }}" THREADS=4 python3 voice/make_zh_a.py 0 1 fix
-      - name: Base with them replaced
+      - name: 补报 parts (late/<hhmm>, version 4)
+        if: steps.fix.outputs.late == 'yes'
+        run: |
+          pids=""
+          for i in 0 1 2 3; do
+            VERSION=4 THREADS=1 python3 voice/make_zh_a.py "$i" 4 late > "late-$i.log" 2>&1 &
+            pids="$pids $!"
+          done
+          for p in $pids; do wait "$p" || { tail -n 20 late-*.log; exit 1; }; done
+          tail -n 1 late-*.log
+          test "$(find late/late -name '*.mp3' | wc -l)" -eq 1440
+      - name: Base with them
         run: |
           base=${{ steps.fix.outputs.base }}; new=${{ steps.fix.outputs.version }}
           curl -fsSL -o base.tar "https://github.com/$GITHUB_REPOSITORY/releases/download/voice-$base/$base.tar"
           mkdir pack && tar -xf base.tar -C pack && rm base.tar
           for n in ${{ steps.fix.outputs.remake }}; do test -f "fix/s/$n.mp3" && cp "fix/s/$n.mp3" "pack/s/$n.mp3"; done
+          if [ -d late/late ]; then mkdir -p pack/late && cp late/late/*.mp3 pack/late/; fi
           test "$(find pack/s -name '*.mp3' | wc -l)" -eq 99999 && test -f pack/chime.mp3
-          (cd pack && tar -cf "../$new.tar" chime.mp3 s)
+          parts="chime.mp3 s"
+          if [ -d pack/late ]; then test "$(find pack/late -name '*.mp3' | wc -l)" -eq 1440; parts="$parts late"; fi
+          (cd pack && tar -cf "../$new.tar" $parts)
           sha256sum "$new.tar" | tee "$new.tar.sha256"
-          cp fix/report-0.json report.json && cat report.json
+          python3 - <<'EOF'
+          import glob, json
+          rows = []
+          for f in sorted(glob.glob('fix/report-*.json') + glob.glob('late/report-*.json')):
+              rows += json.load(open(f))
+          json.dump(rows, open('report.json', 'w'), ensure_ascii=False)
+          bad = [r for r in rows if not r['ok']]
+          print(len(rows), 'made,', len(bad), 'never heard right:', json.dumps(bad[:40], ensure_ascii=False))
+          EOF
       - name: Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           new=${{ steps.fix.outputs.version }}
+          notes="voice-${{ steps.fix.outputs.base }}"
+          if [ -n "${{ steps.fix.outputs.remake }}" ]; then notes="$notes with these made again: ${{ steps.fix.outputs.remake }}"; fi
+          if [ "${{ steps.fix.outputs.late }}" = yes ]; then notes="$notes, and late/<hhmm> (补报: 现在补报一笔，下午四点五十一分，)"; fi
           gh release view "voice-$new" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
             gh release create "voice-$new" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-              --title "Chinese voice pack ${new}" --notes "voice-${{ steps.fix.outputs.base }} with these made again: ${{ steps.fix.outputs.remake }} (voice/fix.json)."
+              --title "Chinese voice pack ${new}" --notes "$notes (voice/fix.json)."
           gh release upload "voice-$new" "$new.tar" "$new.tar.sha256" report.json --clobber --repo "$GITHUB_REPOSITORY"

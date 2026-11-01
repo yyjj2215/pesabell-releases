@@ -2,7 +2,12 @@
 
   VERSION=<k> python make_zh_a.py <shard> <shards> <out_dir>    (models in ./models, see .github/workflows/voice.yml)
 
-Version 3 (used): version 2 with the sentences listed in voice/fix.json made again (.github/workflows/voice-fix.yml).
+Version 4 (used): version 3 and late/<hhmm>.mp3, "现在补报一笔，下午四点五十一分，" for every minute of the day: a
+payment the speaker missed, said later (the server plays chime, late/<hhmm>, s/<n>), with 0.2 s of silence after it.
+"现在" takes the slur of the first syllable ("补报" first came out as 五包, 包, 红包); the 12-hour time with 上午/下午
+was heard right far more often than 十六点 (heard as 值六点). The recognizer hears 补报 as 不报 (same syllables;
+the lexicon has 补 bu3), so the check takes them as the same.
+Version 3: version 2 with the sentences listed in voice/fix.json made again (.github/workflows/voice-fix.yml).
 Version 2: s/1-99,999, whole sentences only; it makes 10,000-99,999 and the sentences version 1 never got
 heard right (RETRY, from version 1's report.json), the workflow takes the rest of version 1. Version 1's parts for
 "一万" + "两千五百先令" (w/, y/, z/ below) are not used by the server: a part that starts with a number slurs it.
@@ -31,7 +36,7 @@ from scipy.signal import resample_poly
 HERE = os.path.dirname(os.path.abspath(__file__))
 MODELS = os.path.join(HERE, "models")
 DIGITS = "零一二三四五六七八九"
-TAKES = {1: 6, 2: 10, 3: 20}
+TAKES = {1: 6, 2: 10, 3: 20, 4: 12}
 
 
 def section(n, lead=True, alone=True):
@@ -65,8 +70,21 @@ def amount(n):
     return section(x) + "万" + rest
 
 
+def clock(h, m):
+    """A time of day in Chinese characters, 12-hour with the part of the day: 下午四点五十一分, 上午九点零五分,
+    凌晨两点整, 中午十二点三十分, 晚上十一点五十九分 (凌晨 0-4, 上午 5-11, 中午 12, 下午 13-17, 晚上 18-23)."""
+    period = "凌晨" if h < 5 else "上午" if h < 12 else "中午" if h < 13 else "下午" if h < 18 else "晚上"
+    hh = h if h <= 12 else h - 12
+    hour = "零" if hh == 0 else section(hh)
+    minute = "整" if m == 0 else "零" + DIGITS[m] + "分" if m < 10 else section(m) + "分"
+    return f"{period}{hour}点{minute}"
+
+
 def items(version=1, retry=()):
     """(part, text to say, words the recognizer must hear)."""
+    if version >= 4:  # 补报: the start of a missed payment said again later; s/<n> follows it
+        return [(f"late/{h:02d}{m:02d}", f"现在补报一笔，{clock(h, m)}，", "补报一笔" + clock(h, m))
+                for h in range(24) for m in range(60)]
     if version >= 3:  # remake only these, checking the amount itself: (part, [(text, speed), ...], amount in words)
         return [(f"s/{n}", [(f"已到账{amount(n)}先令。", 1.0), (f"已到账，{amount(n)}先令。", 0.9)], amount(n))
                 for n in retry]
@@ -164,7 +182,9 @@ def main(shard, shards, out):
                 s.accept_waveform(16000, x)
                 asr.decode_stream(s)
                 heard = s.result.text
-                if version >= 3:
+                if version >= 4:
+                    ok = same(want) in same(heard).replace("不报", "补报")
+                elif version >= 3:
                     ok = same(want) in same(heard) and "到账" in heard
                 else:
                     ok = same(want) in same(heard) and same(heard).startswith(same(want)[:3])
@@ -176,7 +196,10 @@ def main(shard, shards, out):
             if best[4]:
                 break
         _, x, heard, take, ok = best
-        mp3(tidy(x), path)
+        x = tidy(x)
+        if part.startswith("late/"):  # the pause of its comma, before s/<n>
+            x = np.concatenate([x, np.zeros(3200, dtype=np.float32)])
+        mp3(x, path)
         report.append({"part": part, "takes": take, "ok": ok, "heard": heard})
         if k % 100 == 0:
             print(f"shard {shard}: {k}/{len(todo)} in {time.time() - started:.0f} s", flush=True)
