@@ -3,9 +3,7 @@
 # the sentences version 1 never got heard right again, and the rest of version 1 (1-9,999) as it was.
 name: Chinese voice pack
 on:
-  push:
-    paths: ['voice/**', '.github/workflows/voice.yml']
-  workflow_dispatch:
+  workflow_dispatch: # by hand only: 180 jobs (fixes to a few sentences: voice-fix.yml)
 permissions:
   contents: write
 concurrency:

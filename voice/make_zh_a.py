@@ -2,7 +2,8 @@
 
   VERSION=<k> python make_zh_a.py <shard> <shards> <out_dir>    (models in ./models, see .github/workflows/voice.yml)
 
-Version 2 (used): s/1-99,999, whole sentences only; it makes 10,000-99,999 and the sentences version 1 never got
+Version 3 (used): version 2 with the sentences listed in voice/fix.json made again (.github/workflows/voice-fix.yml).
+Version 2: s/1-99,999, whole sentences only; it makes 10,000-99,999 and the sentences version 1 never got
 heard right (RETRY, from version 1's report.json), the workflow takes the rest of version 1. Version 1's parts for
 "一万" + "两千五百先令" (w/, y/, z/ below) are not used by the server: a part that starts with a number slurs it.
 
@@ -30,7 +31,7 @@ from scipy.signal import resample_poly
 HERE = os.path.dirname(os.path.abspath(__file__))
 MODELS = os.path.join(HERE, "models")
 DIGITS = "零一二三四五六七八九"
-TAKES = {1: 6, 2: 10}
+TAKES = {1: 6, 2: 10, 3: 20}
 
 
 def section(n, lead=True, alone=True):
@@ -66,6 +67,9 @@ def amount(n):
 
 def items(version=1, retry=()):
     """(part, text to say, words the recognizer must hear)."""
+    if version >= 3:  # remake only these, checking the amount itself: (part, [(text, speed), ...], amount in words)
+        return [(f"s/{n}", [(f"已到账{amount(n)}先令。", 1.0), (f"已到账，{amount(n)}先令。", 0.9)], amount(n))
+                for n in retry]
     if version >= 2:
         todo = list(retry) + list(range(10000, 100000))
         return [(f"s/{n}", f"已到账{amount(n)}先令。", f"已到账{amount(n)}") for n in todo]
@@ -147,18 +151,29 @@ def main(shard, shards, out):
         path = os.path.join(out, part + ".mp3")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         best = None
-        for take in range(1, TAKES[version] + 1):
-            a = tts.generate(text, sid=0, speed=1.0)
-            x = to16k(a.samples, a.sample_rate)
-            s = asr.create_stream()
-            s.accept_waveform(16000, x)
-            asr.decode_stream(s)
-            heard = s.result.text
-            ok = same(want) in same(heard) and same(heard).startswith(same(want)[:3])
-            score = difflib.SequenceMatcher(None, same(heard), same(want)).ratio() + (1 if ok else 0)
-            if best is None or score > best[0]:
-                best = (score, x, heard, take, ok)
-            if ok:
+        # Version 3 tries the plain sentence first, then with a short pause after 已到账, said a little slower
+        # (60,120 almost never came out right otherwise); it checks the amount itself and 到账.
+        variants = text if isinstance(text, list) else [(text, 1.0)]
+        take = 0
+        for say, speed in variants:
+            for _ in range(TAKES[version]):
+                take += 1
+                a = tts.generate(say, sid=0, speed=speed)
+                x = to16k(a.samples, a.sample_rate)
+                s = asr.create_stream()
+                s.accept_waveform(16000, x)
+                asr.decode_stream(s)
+                heard = s.result.text
+                if version >= 3:
+                    ok = same(want) in same(heard) and "到账" in heard
+                else:
+                    ok = same(want) in same(heard) and same(heard).startswith(same(want)[:3])
+                score = difflib.SequenceMatcher(None, same(heard), same(want)).ratio() + (1 if ok else 0)
+                if best is None or score > best[0]:
+                    best = (score, x, heard, take, ok)
+                if ok:
+                    break
+            if best[4]:
                 break
         _, x, heard, take, ok = best
         mp3(tidy(x), path)

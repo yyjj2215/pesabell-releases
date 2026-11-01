@@ -1,0 +1,57 @@
+# Makes a few sentences of the Chinese voice pack again (voice/fix.json: the base release, the new version, the
+# amounts) and publishes the base with them replaced as a new release for the PesaBell server (deploy/voice.json).
+name: Chinese voice pack fix
+on:
+  push:
+    paths: ['voice/fix.json', '.github/workflows/voice-fix.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: voice-fix
+  cancel-in-progress: true
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: voice
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tools
+        run: |
+          pip install -q sherpa-onnx==2.0.1 numpy scipy
+          command -v ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
+      - name: Models
+        run: |
+          mkdir -p voice/models && cd voice/models
+          curl -fsSL https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-melo-tts-zh_en.tar.bz2 | tar xj
+          curl -fsSL https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-paraformer-zh-small-2024-03-09.tar.bz2 | tar xj
+      - name: Settings
+        id: fix
+        run: |
+          python3 -c "import json; f = json.load(open('voice/fix.json')); print('base=' + f['base']); print('version=' + f['version']); print('remake=' + ' '.join(map(str, f['remake'])))" >> "$GITHUB_OUTPUT"
+      - name: Make the sentences again
+        run: VERSION=3 RETRY="${{ steps.fix.outputs.remake }}" THREADS=4 python3 voice/make_zh_a.py 0 1 fix
+      - name: Base with them replaced
+        run: |
+          base=${{ steps.fix.outputs.base }}; new=${{ steps.fix.outputs.version }}
+          curl -fsSL -o base.tar "https://github.com/$GITHUB_REPOSITORY/releases/download/voice-$base/$base.tar"
+          mkdir pack && tar -xf base.tar -C pack && rm base.tar
+          for n in ${{ steps.fix.outputs.remake }}; do test -f "fix/s/$n.mp3" && cp "fix/s/$n.mp3" "pack/s/$n.mp3"; done
+          test "$(find pack/s -name '*.mp3' | wc -l)" -eq 99999 && test -f pack/chime.mp3
+          (cd pack && tar -cf "../$new.tar" chime.mp3 s)
+          sha256sum "$new.tar" | tee "$new.tar.sha256"
+          cp fix/report-0.json report.json && cat report.json
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          new=${{ steps.fix.outputs.version }}
+          gh release view "voice-$new" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create "voice-$new" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --title "Chinese voice pack ${new}" --notes "voice-${{ steps.fix.outputs.base }} with these made again: ${{ steps.fix.outputs.remake }} (voice/fix.json)."
+          gh release upload "voice-$new" "$new.tar" "$new.tar.sha256" report.json --clobber --repo "$GITHUB_REPOSITORY"
