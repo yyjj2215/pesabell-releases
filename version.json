@@ -1,12 +1,12 @@
 {
-  "versionCode": 12,
-  "versionName": "0.7.1",
-  "apk": "https://raw.githubusercontent.com/yyjj2215/pesabell-releases/main/apk/PesaBell-v0.7.1.apk",
-  "sha256": "7806c1aea05a324117d6d78fb91a0fb3a3fcbe09953e1e18cd6d8a9fc7898f7f",
-  "size": 3311454,
+  "versionCode": 13,
+  "versionName": "0.7.2",
+  "apk": "https://raw.githubusercontent.com/yyjj2215/pesabell-releases/main/apk/PesaBell-v0.7.2.apk",
+  "sha256": "1113b568b5604f1f9d7fa1a0123ba973c841558d2672d8fddd163e03177cce4e",
+  "size": 3312394,
   "notes": {
-    "zh": "音箱确认时间放宽到 4 秒，减少音箱和手机同时播报。音箱漏播的收款，会在音箱能播时由音箱补报，并说出收款时间。手机当时没网的收款，网络恢复后也会让音箱补报。",
-    "en": "The speaker now has up to 4 seconds to confirm a payment, so the phone and the speaker rarely both announce it. A payment the speaker missed is announced again by the speaker as soon as it can, with the time it came in. Payments the phone could not send (no network) are sent again when the network is back.",
-    "sw": "Spika sasa ina hadi sekunde 4 kuthibitisha malipo, kwa hivyo ni nadra simu na spika kuyatangaza pamoja. Malipo ambayo spika ilikosa yatatangazwa tena na spika itakapoweza, pamoja na saa yalipoingia. Malipo ambayo simu haikuweza kutuma (hakuna mtandao) yanatumwa tena mtandao ukirudi."
+    "zh": "支持在 M-Pesa 代理点存现金的短信（Give Ksh… cash to …）：存款记进收入，标注「现金存款」，不播报。",
+    "en": "Cash you deposit at an M-Pesa agent (\"Give Ksh… cash to …\") is now recorded as money in, marked Cash deposit, and never announced.",
+    "sw": "Pesa unazoweka kwa wakala wa M-Pesa (\"Give Ksh… cash to …\") sasa zinaandikwa kwenye mapato zikiwa na lebo ya Kuweka pesa, na hazitangazwi."
   }
 }
