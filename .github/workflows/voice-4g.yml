@@ -31,6 +31,9 @@ jobs:
           curl -fsSL https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-paraformer-zh-2023-09-14.tar.bz2 | tar xj
           ls
       - name: Pieces
+        env:
+          ONLY: z/1,z/2,z/9,z/12,z/17,z/90,ling
+          TAKES: 40
         run: python3 voice/make_4g_clips.py pieces
       - name: Release
         if: always()

@@ -29,7 +29,8 @@ from scipy.signal import resample_poly
 HERE = os.path.dirname(os.path.abspath(__file__))
 MODELS = os.path.join(HERE, "models")
 DIGITS = "零一二三四五六七八九"
-TAKES = 12
+TAKES = int(os.environ.get("TAKES", 12))
+ONLY = [p for p in os.environ.get("ONLY", "").split(",") if p]  # make only these pieces (to redo a few)
 LEAD = 0.025  # seconds kept before a piece's first character
 TAIL = 0.08   # after the last character of a sentence
 
@@ -57,7 +58,7 @@ def jobs():
     for d in range(1, 10):
         out.append((f"h/{d}", f"已到账{big(d, '百')}五十先令。", big(d, "百"), 0))
         out.append((f"k/{d}", f"已到账{big(d, '千')}三百先令。", big(d, "千"), 0))
-    out.append(("ling", "已到账一千，零二十五先令。", "零", 0))
+    out.append(("ling", "已到账一千，零三十五先令。", "零", 0))  # 三's s gives a quiet point to end 零 at
     # 零 with what follows it, said in one go (Jesse, 2026-11-08: 4050's 零 joined alone was not clear): 零五, 零五十, 零一十二
     for r in list(range(1, 20)) + list(range(20, 100, 10)):
         x = DIGITS[r] if r < 10 else ("一十" + ("" if r == 10 else DIGITS[r - 10]) if r < 20 else DIGITS[r // 10] + "十")
@@ -131,6 +132,8 @@ def main(out):
     tts, asr = engines()
     report = []
     for name, sentence, piece, _ in jobs():
+        if ONLY and name not in ONLY:
+            continue
         want = sentence.rstrip("。").replace("，", "")
         best = None
         for take in range(1, TAKES + 1):
