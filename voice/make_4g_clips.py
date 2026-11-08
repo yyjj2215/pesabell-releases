@@ -130,7 +130,7 @@ def main(out):
         x, heard, times, take, ok, _ = best
         row = {"piece": name, "sentence": sentence, "heard": heard, "takes": take, "ok": ok}
         if ok:
-            i = same(heard).find(same(piece))
+            i = want.find(piece)  # by position in the sentence: the heard text may write a sound-alike
             j = i + len(piece)
             start = max(0.0, times[i] - LEAD)
             end = times[j] if j < len(times) else min(len(x) / 16000, times[-1] + 0.6)
@@ -138,6 +138,11 @@ def main(out):
                 loud = np.where(np.abs(x) > 0.01 * np.abs(x).max())[0]
                 end = loud[-1] / 16000 + TAIL
             clip = x[int(start * 16000): int(end * 16000)]
+            if end - start < 0.08:  # a time that makes no sense: leave the piece out, the report says so
+                row.update(ok=False, why=f"times {start:.3f}-{end:.3f}")
+                report.append(row)
+                print(json.dumps(row, ensure_ascii=False), flush=True)
+                continue
             clip = clip * (0.8 / max(np.abs(x).max(), 1e-6))  # the sentence's loudness, not the piece's own
             write(os.path.join(out, name + ".wav"), clip)
             row.update(start=round(start, 3), end=round(end, 3))
