@@ -1,0 +1,46 @@
+# Makes the Chinese pieces for the 4G speaker (voice/make_4g_clips.py: cut out of whole MeloTTS sentences) and
+# publishes them as a release, voice-4g-<run number>, for the PesaBell server's 4G voice pack (pesabell-server
+# media/t/zh4g, built there with pack/minifs.py).
+name: Chinese pieces for the 4G speaker
+on:
+  push:
+    paths: ['voice/make_4g_clips.py', '.github/workflows/voice-4g.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: voice-4g
+  cancel-in-progress: true
+jobs:
+  pieces:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: voice
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tools
+        run: pip install -q sherpa-onnx==2.0.1 numpy scipy
+      - name: Models
+        run: |
+          mkdir -p voice/models && cd voice/models
+          curl -fsSL https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-melo-tts-zh_en.tar.bz2 | tar xj
+          curl -fsSL https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-paraformer-zh-2023-09-14.tar.bz2 | tar xj
+          ls
+      - name: Pieces
+        run: python3 voice/make_4g_clips.py pieces
+      - name: Release
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test -f pieces/report.json || exit 1
+          tag="voice-4g-${{ github.run_number }}"
+          (cd pieces && tar -cf ../pieces.tar .)
+          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "Chinese pieces for the 4G speaker (${{ github.run_number }})" \
+            --notes "voice/make_4g_clips.py: 已到账 + amount pieces + 先令, cut out of whole MeloTTS sentences." || true
+          gh release upload "$tag" pieces.tar pieces/report.json --clobber --repo "$GITHUB_REPOSITORY"
