@@ -17,7 +17,7 @@ Pieces (the server, pesabell-server src/speaker/packs.js, joins them):
   h/<d>.wav       一百 ... 九百 (两百)
   k/<d>.wav       一千 ... 九千 (两千)
   ling.wav        零
-  er.wav          二 (after 零: 一百零二)
+  z/<r>.wav       零 and what follows, in one go: 零五, 零二, 零一十二, 零五十 (1-19, 20-90 by tens)
   wan.wav         万
 """
 import json, os, sys, wave
@@ -58,7 +58,10 @@ def jobs():
         out.append((f"h/{d}", f"已到账{big(d, '百')}五十先令。", big(d, "百"), 0))
         out.append((f"k/{d}", f"已到账{big(d, '千')}三百先令。", big(d, "千"), 0))
     out.append(("ling", "已到账一千零五十先令。", "零", 0))
-    out.append(("er", "已到账一百零二先令。", "二", 0))  # 2 after 零 (一百零二): 二, not 两
+    # 零 with what follows it, said in one go (Jesse, 2026-11-08: 4050's 零 joined alone was not clear): 零五, 零五十, 零一十二
+    for r in list(range(1, 20)) + list(range(20, 100, 10)):
+        x = DIGITS[r] if r < 10 else ("一十" + ("" if r == 10 else DIGITS[r - 10]) if r < 20 else DIGITS[r // 10] + "十")
+        out.append((f"z/{r}", f"已到账一千零{x}先令。", "零" + x, 0))
     out.append(("wan", "已到账两万五千先令。", "万", 0))
     return out
 
