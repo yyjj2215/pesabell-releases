@@ -116,12 +116,16 @@ def main(out):
             asr.decode_stream(s)
             heard = s.result.text.replace(" ", "")
             times = list(s.result.timestamps)
-            ok = same(heard) == same(want) and len(times) == len(heard)
-            if best is None or ok:
-                best = (x, heard, times, take, ok)
-            if ok:
+            # The recognizer often writes a sound-alike (县令 for 先令, 战 for 账): what has to be right is the
+            # number itself and one time per character, so the pieces can be cut by position.
+            number = want[3:-2]
+            ok = len(heard) == len(want) and len(times) == len(heard) and same(heard[3:-2]) == same(number)
+            score = sum(a == b for a, b in zip(same(heard), same(want))) + (100 if ok else 0)
+            if best is None or score > best[5]:
+                best = (x, heard, times, take, ok, score)
+            if ok and same(heard) == same(want):
                 break
-        x, heard, times, take, ok = best
+        x, heard, times, take, ok, _ = best
         row = {"piece": name, "sentence": sentence, "heard": heard, "takes": take, "ok": ok}
         if ok:
             i = same(heard).find(same(piece))
