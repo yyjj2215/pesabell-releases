@@ -87,6 +87,55 @@ def boundary(x, t, back=0.18):
     return (best + win // 2) / 16000
 
 
+MODE = os.environ.get("MODE", "cut")  # alone: each word said on its own (Jesse, 2026-11-09: words cut out of sentences
+# were not clear; the words said alone, with a short pause between them, were clear, in the MeloTTS voice)
+
+
+def alone_jobs():
+    """(name, text): the same pieces as jobs(), each said on its own."""
+    out = []
+    for name, sentence, piece, _ in jobs():
+        out.append((name, piece))
+    return out
+
+
+def trim(x, margin=0.02):
+    loud = np.where(np.abs(x) > 0.02 * np.abs(x).max())[0]
+    a = max(0, loud[0] - int(margin * 16000))
+    b = min(len(x), loud[-1] + int(margin * 3 * 16000))
+    return x[a:b]
+
+
+def main_alone(out):
+    tts, asr = engines()
+    report = []
+    for name, text in alone_jobs():
+        if ONLY and name not in ONLY:
+            continue
+        best = None
+        for take in range(1, TAKES + 1):
+            a = tts.generate(text + "。", sid=0, speed=1.0)
+            x = to16k(a.samples, a.sample_rate)
+            s = asr.create_stream()
+            s.accept_waveform(16000, x)
+            asr.decode_stream(s)
+            heard = s.result.text.replace(" ", "")
+            ok = same(heard) == same(text) or (name in ("head", "tail") and len(heard) == len(text))
+            if best is None or (ok and not best[3]):
+                best = (x, heard, take, ok)
+            if ok:
+                break
+        x, heard, take, ok = best
+        clip = trim(x) * (0.8 / max(np.abs(x).max(), 1e-6))
+        write(os.path.join(out, name + ".wav"), clip)
+        row = {"piece": name, "text": text, "heard": heard, "takes": take, "ok": ok, "seconds": round(len(clip) / 16000, 3)}
+        report.append(row)
+        print(json.dumps(row, ensure_ascii=False), flush=True)
+    with open(os.path.join(out, "report.json"), "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=1)
+    print(f"{len(report)} words, not heard right: {[r['piece'] for r in report if not r['ok']]}")
+
+
 def same(a):
     return a.translate(ALIKE)
 
@@ -184,4 +233,4 @@ def main(out):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    (main_alone if MODE == "alone" else main)(sys.argv[1])
