@@ -12,6 +12,7 @@ import json, os, sys, time
 sys.path.insert(0, "CosyVoice")
 sys.path.insert(0, "CosyVoice/third_party/Matcha-TTS")
 import numpy as np
+import soundfile as sf
 import torch, torchaudio
 from cosyvoice.cli.cosyvoice import AutoModel
 
@@ -51,10 +52,14 @@ def basic():
 def main(out):
     model = AutoModel(model_dir="CosyVoice/pretrained_models/Fun-CosyVoice3-0.5B")
     sr = model.sample_rate
-    report = []
+    rp = os.path.join(out, "report.json")
+    report = json.load(open(rp, encoding="utf-8")) if os.path.exists(rp) else []
     for p in ONLY:
         wav, text = PROMPTS[p]
         for name, word in (basic() if os.environ.get("SET") == "basic" else words()):
+            path = os.path.join(out, p, name + ".wav")
+            if os.path.exists(path):  # made before a crash: the workflow runs this again until all are there
+                continue
             t0 = time.time()
             chunks = [j["tts_speech"] for j in model.inference_zero_shot(word + "。", SYSTEM + text, wav, stream=False)]
             speech = torchaudio.functional.resample(torch.cat(chunks, dim=1), sr, 16000)
@@ -62,10 +67,8 @@ def main(out):
             loud = np.where(np.abs(x) > 0.02 * np.abs(x).max())[0]
             x = x[max(0, loud[0] - 320): loud[-1] + 800]
             x = x / max(np.abs(x).max(), 1e-6) * 0.8
-            path = os.path.join(out, p, name + ".wav")
             os.makedirs(os.path.dirname(path), exist_ok=True)
-            torchaudio.save(path, torch.from_numpy(x.astype(np.float32)).unsqueeze(0), 16000,
-                            encoding="PCM_S", bits_per_sample=16)
+            sf.write(path, x.astype(np.float32), 16000, subtype="PCM_16")
             row = {"prompt": p, "piece": name, "word": word, "seconds": round(len(x) / 16000, 3),
                    "took": round(time.time() - t0, 1)}
             report.append(row)

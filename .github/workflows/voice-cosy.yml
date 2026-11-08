@@ -35,7 +35,10 @@ jobs:
       - name: Words
         env:
           SET: basic
-        run: python voice/make_cosy.py words
+          OMP_NUM_THREADS: 2
+        run: |
+          # it has crashed (segmentation fault) between words: run it again, it skips the words already made
+          for i in $(seq 40); do python voice/make_cosy.py words && break; echo "run $i stopped, again"; done
       - name: Release
         if: always()
         env:
