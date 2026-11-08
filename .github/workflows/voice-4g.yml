@@ -32,7 +32,8 @@ jobs:
           ls
       - name: Pieces
         env:
-          MODE: alone
+          MODE: list
+          TAKES: 20
         run: python3 voice/make_4g_clips.py pieces
       - name: Release
         if: always()

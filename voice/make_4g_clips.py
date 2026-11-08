@@ -106,6 +106,68 @@ def trim(x, margin=0.02):
     return x[a:b]
 
 
+def segments(x, gap=0.07):
+    """Sounding stretches split by quiet of at least `gap` seconds: [(start, end)] in samples."""
+    hop = 160
+    e = np.array([np.sqrt(np.mean(x[i:i + hop] ** 2)) for i in range(0, len(x) - hop, hop)])
+    on = e > 0.04 * e.max()
+    out, start, quiet = [], None, 0
+    for k, v in enumerate(on):
+        if v:
+            if start is None:
+                start = k
+            quiet = 0
+        elif start is not None:
+            quiet += 1
+            if quiet * hop >= gap * 16000:
+                out.append((start * hop, (k - quiet + 1) * hop))
+                start, quiet = None, 0
+    if start is not None:
+        out.append((start * hop, len(e) * hop))
+    return out
+
+
+def main_list(out):
+    """Each word said in full between commas, 已到账，<word>，先令。, and cut out at the pauses around it: the word
+    keeps its whole sound (words in the middle of a sentence are said short), and the cut needs no timestamps."""
+    tts, asr = engines()
+    report = []
+    for name, text in alone_jobs():
+        if ONLY and name not in ONLY:
+            continue
+        sentence = "已到账，先令。" if name in ("head", "tail") else f"已到账，{text}，先令。"
+        want = sentence.replace("，", "").rstrip("。")
+        best = None
+        for take in range(1, TAKES + 1):
+            a = tts.generate(sentence, sid=0, speed=1.0)
+            x = to16k(a.samples, a.sample_rate)
+            s = asr.create_stream()
+            s.accept_waveform(16000, x)
+            asr.decode_stream(s)
+            heard = s.result.text.replace(" ", "")
+            seg = segments(x)
+            parts = 2 if name in ("head", "tail") else 3
+            ok = len(seg) == parts and same(heard[3:len(heard) - 2]) == same(want[3:-2]) and len(heard) == len(want)
+            if best is None or (ok and not best[4]):
+                best = (x, heard, seg, take, ok)
+            if ok:
+                break
+        x, heard, seg, take, ok = best
+        row = {"piece": name, "sentence": sentence, "heard": heard, "takes": take, "ok": ok, "segments": len(seg)}
+        if ok:
+            k = {"head": 0, "tail": 1}.get(name, 1)
+            a, b = seg[k]
+            clip = x[max(0, a - 320): min(len(x), b + 640)]  # 20 ms before, 40 ms after the sound
+            clip = clip * (0.8 / max(np.abs(x).max(), 1e-6))
+            write(os.path.join(out, name + ".wav"), clip)
+            row["seconds"] = round(len(clip) / 16000, 3)
+        report.append(row)
+        print(json.dumps(row, ensure_ascii=False), flush=True)
+    with open(os.path.join(out, "report.json"), "w", encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=1)
+    print(f"{len(report)} words, not cut: {[r['piece'] for r in report if not r['ok']]}")
+
+
 def main_alone(out):
     tts, asr = engines()
     report = []
@@ -233,4 +295,4 @@ def main(out):
 
 
 if __name__ == "__main__":
-    (main_alone if MODE == "alone" else main)(sys.argv[1])
+    {"alone": main_alone, "list": main_list}.get(MODE, main)(sys.argv[1])
