@@ -6,7 +6,7 @@ Jesse, 2026-11-08: a payment is 已到账 + the amount + 先令. Each piece is c
 MeloTTS voice as the Wi-Fi speakers' sentences (make_zh_a.py), from where it sits in a real announcement, so it keeps
 the tone of the middle of a sentence (word clips said alone end each word as if the sentence stopped there). The
 recognizer (sherpa-onnx paraformer zh) gives each character's start time; a piece runs from its first character's
-start to the next character's start. A sentence is said again (up to TAKES times) until every character is heard
+onset to the next character's onset (boundary(): the quietest point just before the recognizer's time). A sentence is said again (up to TAKES times) until every character is heard
 right and has a time.
 
 Pieces (the server, pesabell-server src/speaker/packs.js, joins them):
@@ -69,6 +69,19 @@ def jobs():
 # Sound-alikes the recognizer writes for a number said right (七 as 期, 十 as 时, 五 as 午): the times still fit.
 ALIKE = str.maketrans({"两": "二", "期": "七", "齐": "七", "时": "十", "实": "十", "石": "十", "是": "十", "午": "五",
                        "武": "五", "舞": "五"})
+
+
+def boundary(x, t, back=0.18):
+    """Where a character really starts: the recognizer's time is the loud part, often tens of ms after the onset
+    (零 after 千: the l runs on from the n with no gap, so a cut at the time clips it). The quietest 10 ms within
+    `back` seconds before t."""
+    hop, win = 80, 160
+    lo = max(0, int((t - back) * 16000))
+    hi = min(len(x) - win, int(t * 16000))
+    if hi <= lo:
+        return t
+    best = min(range(lo, hi, hop), key=lambda i: float(np.mean(x[i:i + win] ** 2)))
+    return (best + win // 2) / 16000
 
 
 def same(a):
@@ -140,8 +153,9 @@ def main(out):
         if ok:
             i = want.find(piece)  # by position in the sentence: the heard text may write a sound-alike
             j = i + len(piece)
-            start = max(0.0, times[i] - LEAD)
-            end = times[j] if j < len(times) else min(len(x) / 16000, times[-1] + 0.6)
+            prev = times[i - 1] if i else 0.0
+            start = max(prev + 0.03, boundary(x, times[i], min(0.18, times[i] - prev - 0.03))) if i else max(0.0, times[0] - LEAD)
+            end = boundary(x, times[j], min(0.18, times[j] - times[j - 1] - 0.03)) if j < len(times) else len(x) / 16000
             if j >= len(times):  # the piece ends the sentence: up to where the sound fades, plus a little
                 loud = np.where(np.abs(x) > 0.01 * np.abs(x).max())[0]
                 end = loud[-1] / 16000 + TAIL
