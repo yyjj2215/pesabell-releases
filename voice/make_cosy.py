@@ -42,13 +42,19 @@ def words():
     return w
 
 
+def basic():
+    """The base words Jesse checks first: 0-9, 两, 十 百 千 万, 已到账, 先令."""
+    keep = {"head", "tail", "ling", "wan", "er", "n/2"} | {f"b/{c}" for c in "一三四五六七八九十百千"}
+    return [(n, w) for n, w in words() if n in keep]
+
+
 def main(out):
     model = AutoModel(model_dir="CosyVoice/pretrained_models/Fun-CosyVoice3-0.5B")
     sr = model.sample_rate
     report = []
     for p in ONLY:
         wav, text = PROMPTS[p]
-        for name, word in words():
+        for name, word in (basic() if os.environ.get("SET") == "basic" else words()):
             t0 = time.time()
             chunks = [j["tts_speech"] for j in model.inference_zero_shot(word + "。", SYSTEM + text, wav, stream=False)]
             speech = torchaudio.functional.resample(torch.cat(chunks, dim=1), sr, 16000)

@@ -33,6 +33,8 @@ jobs:
           python -c "from huggingface_hub import snapshot_download; snapshot_download('FunAudioLLM/Fun-CosyVoice3-0.5B-2512', local_dir='CosyVoice/pretrained_models/Fun-CosyVoice3-0.5B')"
           ls CosyVoice/pretrained_models/Fun-CosyVoice3-0.5B
       - name: Words
+        env:
+          SET: basic
         run: python voice/make_cosy.py words
       - name: Release
         if: always()
