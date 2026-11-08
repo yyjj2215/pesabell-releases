@@ -17,6 +17,7 @@ Pieces (the server, pesabell-server src/speaker/packs.js, joins them):
   h/<d>.wav       一百 ... 九百 (两百)
   k/<d>.wav       一千 ... 九千 (两千)
   ling.wav        零
+  er.wav          二 (after 零: 一百零二)
   wan.wav         万
 """
 import json, os, sys, wave
@@ -57,6 +58,7 @@ def jobs():
         out.append((f"h/{d}", f"已到账{big(d, '百')}五十先令。", big(d, "百"), 0))
         out.append((f"k/{d}", f"已到账{big(d, '千')}三百先令。", big(d, "千"), 0))
     out.append(("ling", "已到账一千零五十先令。", "零", 0))
+    out.append(("er", "已到账一百零二先令。", "二", 0))  # 2 after 零 (一百零二): 二, not 两
     out.append(("wan", "已到账两万五千先令。", "万", 0))
     return out
 
