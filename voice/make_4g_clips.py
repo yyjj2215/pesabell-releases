@@ -57,11 +57,13 @@ def jobs():
     for d in range(1, 10):
         out.append((f"h/{d}", f"已到账{big(d, '百')}五十先令。", big(d, "百"), 0))
         out.append((f"k/{d}", f"已到账{big(d, '千')}三百先令。", big(d, "千"), 0))
-    out.append(("ling", "已到账一千零五十先令。", "零", 0))
+    out.append(("ling", "已到账一千，零二十五先令。", "零", 0))
     # 零 with what follows it, said in one go (Jesse, 2026-11-08: 4050's 零 joined alone was not clear): 零五, 零五十, 零一十二
     for r in list(range(1, 20)) + list(range(20, 100, 10)):
         x = DIGITS[r] if r < 10 else ("一十" + ("" if r == 10 else DIGITS[r - 10]) if r < 20 else DIGITS[r // 10] + "十")
-        out.append((f"z/{r}", f"已到账一千零{x}先令。", "零" + x, 0))
+        # After a comma: 零 then starts after a pause, so its l is not run together with the n of 千 and can be cut
+        # whole (the speaker plays a pause between the amount's parts anyway).
+        out.append((f"z/{r}", f"已到账一千，零{x}先令。", "零" + x, 0))
     out.append(("wan", "已到账两万五千先令。", "万", 0))
     return out
 
@@ -129,7 +131,7 @@ def main(out):
     tts, asr = engines()
     report = []
     for name, sentence, piece, _ in jobs():
-        want = sentence.rstrip("。")
+        want = sentence.rstrip("。").replace("，", "")
         best = None
         for take in range(1, TAKES + 1):
             a = tts.generate(sentence, sid=0, speed=1.0)
@@ -155,7 +157,7 @@ def main(out):
             j = i + len(piece)
             prev = times[i - 1] if i else 0.0
             start = max(prev + 0.03, boundary(x, times[i], min(0.18, times[i] - prev - 0.03))) if i else max(0.0, times[0] - LEAD)
-            end = boundary(x, times[j], min(0.18, times[j] - times[j - 1] - 0.03)) if j < len(times) else len(x) / 16000
+            end = boundary(x, times[j], min(0.18, times[j] - max(times[j - 1], start + 0.1))) if j < len(times) else len(x) / 16000
             if j >= len(times):  # the piece ends the sentence: up to where the sound fades, plus a little
                 loud = np.where(np.abs(x) > 0.01 * np.abs(x).max())[0]
                 end = loud[-1] / 16000 + TAIL
