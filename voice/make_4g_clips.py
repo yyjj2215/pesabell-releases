@@ -63,8 +63,13 @@ def jobs():
     return out
 
 
+# Sound-alikes the recognizer writes for a number said right (七 as 期, 十 as 时, 五 as 午): the times still fit.
+ALIKE = str.maketrans({"两": "二", "期": "七", "齐": "七", "时": "十", "实": "十", "石": "十", "是": "十", "午": "五",
+                       "武": "五", "舞": "五"})
+
+
 def same(a):
-    return a.replace("两", "二")
+    return a.translate(ALIKE)
 
 
 def engines():
