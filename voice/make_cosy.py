@@ -49,6 +49,16 @@ def basic():
     return [(n, w) for n, w in words() if n in keep]
 
 
+def takes():
+    """Several takes of the single characters CosyVoice said badly alone (Jesse, 2026-11-09: 两 百 万), to pick from;
+    and the words they are used in: 两百, 一万, 两万."""
+    out = []
+    for c in "两百万":
+        out += [(f"x/{c}-{i}", c) for i in range(1, 7)]
+    out += [(f"x/{w}-{i}", w) for w in ("两百", "一万", "两万") for i in range(1, 3)]
+    return out
+
+
 def main(out):
     model = AutoModel(model_dir="CosyVoice/pretrained_models/Fun-CosyVoice3-0.5B")
     sr = model.sample_rate
@@ -56,7 +66,7 @@ def main(out):
     report = json.load(open(rp, encoding="utf-8")) if os.path.exists(rp) else []
     for p in ONLY:
         wav, text = PROMPTS[p]
-        for name, word in (basic() if os.environ.get("SET") == "basic" else words()):
+        for name, word in {"basic": basic, "takes": takes}.get(os.environ.get("SET"), words)():
             path = os.path.join(out, p, name + ".wav")
             if os.path.exists(path):  # made before a crash: the workflow runs this again until all are there
                 continue
