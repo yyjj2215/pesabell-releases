@@ -22,7 +22,7 @@ PROMPTS = {
     "melo": (os.path.join(HERE, "prompts/melo-1000.wav"), "已到账一千先令。"),
     "cv": ("CosyVoice/asset/zero_shot_prompt.wav", "希望你以后能够做的比我还好呦。"),
 }
-ONLY = [p for p in os.environ.get("PROMPTS", "melo,cv").split(",") if p]
+ONLY = [p for p in os.environ.get("PROMPTS", "melo").split(",") if p]  # Jesse, 2026-11-09: the melo voice
 SYSTEM = "You are a helpful assistant.<|endofprompt|>"
 
 
@@ -59,6 +59,13 @@ def takes():
     return out
 
 
+def full():
+    """Every word the 4G pieces pack joins, TAKES times each (CosyVoice now and then says a word as a 0.04 s blip or
+    drags it out; the take to keep is picked afterwards): <piece>~<take>."""
+    n = int(os.environ.get("TAKES", 3))
+    return [(f"{name}~{k}", word) for name, word in words() if not name.startswith("b/") for k in range(1, n + 1)]
+
+
 def main(out):
     model = AutoModel(model_dir="CosyVoice/pretrained_models/Fun-CosyVoice3-0.5B")
     sr = model.sample_rate
@@ -66,7 +73,7 @@ def main(out):
     report = json.load(open(rp, encoding="utf-8")) if os.path.exists(rp) else []
     for p in ONLY:
         wav, text = PROMPTS[p]
-        for name, word in {"basic": basic, "takes": takes}.get(os.environ.get("SET"), words)():
+        for name, word in {"basic": basic, "takes": takes, "full": full}.get(os.environ.get("SET"), words)():
             path = os.path.join(out, p, name + ".wav")
             if os.path.exists(path):  # made before a crash: the workflow runs this again until all are there
                 continue

@@ -12,7 +12,7 @@ concurrency:
 jobs:
   words:
     runs-on: ubuntu-latest
-    timeout-minutes: 340
+    timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -34,7 +34,8 @@ jobs:
           ls CosyVoice/pretrained_models/Fun-CosyVoice3-0.5B
       - name: Words
         env:
-          SET: takes
+          SET: full
+          TAKES: 3
           OMP_NUM_THREADS: 2
         run: |
           # it has crashed (segmentation fault) between words: run it again, it skips the words already made
