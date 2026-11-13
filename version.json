@@ -1,12 +1,12 @@
 {
-  "versionCode": 13,
-  "versionName": "0.7.2",
-  "apk": "https://raw.githubusercontent.com/yyjj2215/pesabell-releases/main/apk/PesaBell-v0.7.2.apk",
-  "sha256": "1113b568b5604f1f9d7fa1a0123ba973c841558d2672d8fddd163e03177cce4e",
-  "size": 3312394,
+  "versionCode": 14,
+  "versionName": "0.8.0",
+  "apk": "https://raw.githubusercontent.com/yyjj2215/pesabell-releases/main/apk/PesaBell-v0.8.0.apk",
+  "sha256": "5a463ccf8736414ae3a46f204043f5a896d746172a96f12b76b6abd359f58a4d",
+  "size": 3622578,
   "notes": {
-    "zh": "支持在 M-Pesa 代理点存现金的短信（Give Ksh… cash to …）：存款记进收入，标注「现金存款」，不播报。",
-    "en": "Cash you deposit at an M-Pesa agent (\"Give Ksh… cash to …\") is now recorded as money in, marked Cash deposit, and never announced.",
-    "sw": "Pesa unazoweka kwa wakala wa M-Pesa (\"Give Ksh… cash to …\") sasa zinaandikwa kwenye mapato zikiwa na lebo ya Kuweka pesa, na hazitangazwi."
+    "zh": "App 免费：交易记录、分类、现金记账、日结、赊账本、统计、手机播报都不收费。音箱套餐在 App 里用 M-Pesa Pay Bill（444174，账号 05850）付款，自动开通。新用户可以用手机号直接注册。导出 Excel 改为分享到其他应用或保存到手机。",
+    "en": "The app is free: records, categories, cash, the day's close, the credit book, statistics and the phone's voice. Pay for the speaker plan in the app with M-Pesa Pay Bill 444174, account 05850: it starts by itself. New shops can sign up with their phone number. Excel export now shares to another app or saves on the phone.",
+    "sw": "Programu ni bure: rekodi, makundi, pesa taslimu, hesabu ya siku, daftari la madeni, takwimu na sauti ya simu. Lipia kifurushi cha spika kwenye programu kwa M-Pesa Pay Bill 444174, akaunti 05850: kinaanza chenyewe. Maduka mapya yanaweza kujisajili kwa nambari ya simu. Excel sasa inatumwa kwa programu nyingine au kuhifadhiwa kwenye simu."
   }
 }
