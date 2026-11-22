@@ -1,12 +1,12 @@
 {
-  "versionCode": 15,
-  "versionName": "0.8.1",
-  "apk": "https://raw.githubusercontent.com/yyjj2215/pesabell-releases/main/apk/PesaBell-v0.8.1.apk",
-  "sha256": "924e78ad107a4fe0af2bd16b5a2eaf6047416d22eaf757c3838cbb0091199a58",
-  "size": 3625422,
+  "versionCode": 16,
+  "versionName": "0.8.2",
+  "apk": "https://raw.githubusercontent.com/yyjj2215/pesabell-releases/main/apk/PesaBell-v0.8.2.apk",
+  "sha256": "9153c852dcda960d18097bbef92dc705eaee32615ddc638179ae6ca9db612ab2",
+  "size": 3625446,
   "notes": {
-    "zh": "待核对的收款可以一键全部标为已核对（先确认一次，建议先看一眼 M-Pesa 余额）。",
-    "en": "Payments to check can now be marked as checked all at once (it asks first; take a quick look at your M-Pesa balance).",
-    "sw": "Malipo yanayosubiri kukaguliwa sasa yanaweza kuwekwa yote kuwa yamekaguliwa kwa mara moja (inauliza kwanza; angalia salio lako la M-Pesa)."
+    "zh": "交易记录可以按金额搜索：输入 350、1,250 等，就能找到这个金额的收款。",
+    "en": "Search your records by amount: type 350, 1,250 and so on to find payments of that amount.",
+    "sw": "Tafuta rekodi zako kwa kiasi: andika 350, 1,250 n.k. kupata malipo ya kiasi hicho."
   }
 }
