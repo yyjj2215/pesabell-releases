@@ -1,12 +1,12 @@
 {
-  "versionCode": 16,
-  "versionName": "0.8.2",
-  "apk": "https://raw.githubusercontent.com/yyjj2215/pesabell-releases/main/apk/PesaBell-v0.8.2.apk",
-  "sha256": "9153c852dcda960d18097bbef92dc705eaee32615ddc638179ae6ca9db612ab2",
+  "versionCode": 17,
+  "versionName": "0.8.3",
+  "apk": "https://raw.githubusercontent.com/yyjj2215/pesabell-releases/main/apk/PesaBell-v0.8.3.apk",
+  "sha256": "abccaffdc1d9a1c09a1db995eef3983b125aaef8c8001ec4c53732316e29a6c4",
   "size": 3625446,
   "notes": {
-    "zh": "交易记录可以按金额搜索：输入 350、1,250 等，就能找到这个金额的收款。",
-    "en": "Search your records by amount: type 350, 1,250 and so on to find payments of that amount.",
-    "sw": "Tafuta rekodi zako kwa kiasi: andika 350, 1,250 n.k. kupata malipo ya kiasi hicho."
+    "zh": "交易记录页的搜索框一直显示，不用再找右上角的放大镜。",
+    "en": "The search box is now always shown on the records page: no need to find the magnifier at the top.",
+    "sw": "Kisanduku cha kutafuta sasa kinaonekana kila wakati kwenye ukurasa wa rekodi: hakuna haja ya kutafuta kioo cha kukuza juu."
   }
 }
